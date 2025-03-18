@@ -1,0 +1,15 @@
+environment: "test"
+
+unity_catalog:
+  catalog_name: "test_catalog"
+  source_schema: "test_schema"
+  target_schema: "test_schema"
+  log_path: "test_catalog.logs.pipeline_logs"
+
+spark:
+  app_name: "test_pipeline"
+  master: "local[*]"
+
+database:
+  type: "duckdb"
+  path: "memory"
