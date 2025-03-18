@@ -122,4 +122,159 @@ docker run -it --rm -v $(pwd):/app pyspark-pipeline /bin/bash
    - Ensure Docker Desktop is running
    - Check available system resources
 
-[rest of README remains the same...]
+## Building and Deploying the Wheel Package
+
+### Local Build Process
+
+1. **Install build tools**
+   ```bash
+   pip install build
+   ```
+
+2. **Build the wheel package**
+   ```bash
+   # From the project root directory
+   python -m build
+
+   # This will create two directories:
+   # - dist/data_pipeline-0.1.0.tar.gz (source distribution)
+   # - dist/data_pipeline-0.1.0-py3-none-any.whl (wheel distribution)
+   ```
+
+3. **Test the wheel locally**
+   ```bash
+   # Create a new virtual environment
+   python -m venv test_env
+   source test_env/bin/activate  # On Windows: test_env\Scripts\activate
+
+   # Install the wheel
+   pip install dist/data_pipeline-0.1.0-py3-none-any.whl
+   ```
+
+### Deploying to Databricks
+
+1. **Upload wheel to Databricks**
+   ```bash
+   # Using Databricks CLI (ensure you're configured)
+   databricks fs cp \
+     dist/data_pipeline-0.1.0-py3-none-any.whl \
+     dbfs:/FileStore/jars/data_pipeline-0.1.0-py3-none-any.whl
+   ```
+
+2. **Install on Databricks Cluster**
+   - Go to your cluster configuration
+   - Add the wheel to Libraries:
+     ```
+     dbfs:/FileStore/jars/data_pipeline-0.1.0-py3-none-any.whl
+     ```
+   - Restart the cluster
+
+3. **Using in Databricks Notebook**
+   ```python
+   # Import and use the package
+   from data_pipeline.pipeline import DataPipeline
+   from data_pipeline.config import AppConfig
+
+   # Initialize pipeline
+   config = AppConfig.from_yaml("/dbfs/path/to/config.yml")
+   pipeline = DataPipeline(config)
+
+   # Run pipeline
+   pipeline.run("source_table", "target_table")
+   ```
+
+### Version Management
+
+Current build information:
+- Build timestamp: 2025-03-18 20:35:08 UTC
+- Built by: evans-mike
+- Version: 0.1.0
+
+### Build Dependencies
+
+Make sure your `pyproject.toml` and `setup.py` are properly configured:
+
+```toml
+# pyproject.toml
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build_meta"
+```
+
+### Common Issues and Solutions
+
+1. **Missing Dependencies**
+   ```bash
+   # Install all development dependencies
+   pip install -e ".[dev]"
+   ```
+
+2. **Version Conflicts**
+   - Check `pip freeze` output
+   - Use `pip-compile` for deterministic builds
+   ```bash
+   pip install pip-tools
+   pip-compile requirements.in
+   ```
+
+3. **Databricks Compatibility**
+   - Ensure Python version matches cluster
+   - Test with same Spark version as cluster
+   - Verify all dependencies are available in Databricks
+
+### Continuous Integration
+
+Example GitHub Actions workflow for automated builds:
+
+```yaml
+name: Build and Test
+
+on: [push, pull_request]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.9'
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install build
+      - name: Build package
+        run: python -m build
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: dist
+          path: dist/
+```
+
+### Local Development vs Deployment
+
+1. **Local Testing**
+   ```bash
+   # Install in editable mode
+   pip install -e ".[dev]"
+   
+   # Run tests
+   pytest
+   ```
+
+2. **Production Deployment**
+   ```bash
+   # Build production wheel
+   python -m build
+   
+   # Deploy to Databricks
+   databricks fs cp [wheel-file] dbfs:/FileStore/jars/
+   ```
+
+### Version History
+
+| Version | Date | Builder | Changes |
+|---------|------|---------|---------|
+| 0.1.0 | 2025-03-18 | evans-mike | Initial release |

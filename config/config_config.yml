@@ -1,0 +1,15 @@
+environment: "development"  # or "production"
+
+unity_catalog:
+  catalog_name: "my_catalog"
+  source_schema: "raw_data"
+  target_schema: "processed_data"
+  log_path: "my_catalog.logs.pipeline_logs"
+
+spark:
+  app_name: "data_pipeline"
+  master: "local[*]"  # for local development
+
+database:
+  type: "duckdb"  # or "spark" for production
+  path: "memory"  # or specific path for persistent storage

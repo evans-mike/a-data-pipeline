@@ -1,0 +1,38 @@
+data_pipeline/
+├── Dockerfile
+├── README.md
+├── pyproject.toml
+├── requirements.txt
+├── requirements-dev.txt
+├── setup.py
+├── config/
+│   ├── __init__.py
+│   └── config.yml
+├── src/
+│   └── data_pipeline/
+│       ├── __init__.py
+│       ├── config/
+│       │   ├── __init__.py
+│       │   └── app_config.py
+│       ├── models/
+│       │   ├── __init__.py
+│       │   └── data_models.py
+│       ├── transformations/
+│       │   ├── __init__.py
+│       │   └── transforms.py
+│       ├── database/
+│       │   ├── __init__.py
+│       │   ├── base.py
+│       │   ├── spark_db.py
+│       │   └── duck_db.py
+│       └── pipeline.py
+└── tests/
+    ├── __init__.py
+    ├── conftest.py
+    ├── unit/
+    │   ├── __init__.py
+    │   ├── test_transforms.py
+    │   └── test_config.py
+    └── integration/
+        ├── __init__.py
+        └── test_pipeline.py
