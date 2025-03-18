@@ -1,184 +1,125 @@
 # PySpark Data Pipeline Project
 
-This project template provides a structure for developing PySpark data pipelines that can be run both locally using Docker and deployed to Databricks as a wheel package.
+[previous sections remain the same...]
 
-## Project Structure
+### Working with Docker Containers
 
-```
-.
-├── Dockerfile
-├── README.md
-├── requirements.txt
-├── setup.py
-├── src/
-│   └── your_package/
-│       ├── __init__.py
-│       └── pipeline/
-│           ├── __init__.py
-│           └── transforms.py
-└── tests/
-    └── test_transforms.py
-```
+After building your image with `docker build -t pyspark-pipeline .`, you have several options for running containers:
 
-## Getting Started
-
-### Prerequisites
-
-- Docker Desktop ([Install Docker](https://docs.docker.com/get-docker/))
-- Python 3.9+ (for local development outside Docker)
-- Make (optional, but recommended for using Makefile commands)
-- Git
-
-### Local Development Setup
-
-1. Clone this repository:
+1. **Run Interactive Development Session**
    ```bash
-   git clone <your-repo-url>
-   cd <your-repo-name>
+   # Start an interactive shell with current directory mounted
+   docker run -it --rm \
+     -v ${PWD}:/app \
+     --name pyspark-dev \
+     pyspark-pipeline /bin/bash
+   ```
+   - `-it`: Interactive terminal
+   - `--rm`: Remove container when stopped
+   - `-v ${PWD}:/app`: Mount current directory
+   - `--name pyspark-dev`: Give container a recognizable name
+
+2. **Run in Background Mode**
+   ```bash
+   # Start container in detached mode
+   docker run -d \
+     -v ${PWD}:/app \
+     --name pyspark-service \
+     pyspark-pipeline
+   ```
+   - `-d`: Run in detached (background) mode
+
+3. **Run One-Off Commands**
+   ```bash
+   # Run tests
+   docker run --rm pyspark-pipeline pytest
+
+   # Run a specific Python script
+   docker run --rm -v ${PWD}:/app pyspark-pipeline python src/your_package/pipeline/transforms.py
    ```
 
-2. Build the Docker image (first time will take a few minutes):
-   ```bash
-   docker build -t pyspark-pipeline .
-   ```
-
-3. Verify the build was successful by running the tests:
-   ```bash
-   docker run pyspark-pipeline
-   ```
-
-4. Start an interactive development session:
-   ```bash
-   # On Windows:
-   docker run -it --rm -v ${PWD}:/app pyspark-pipeline /bin/bash
-
-   # On Mac/Linux:
-   docker run -it --rm -v $(pwd):/app pyspark-pipeline /bin/bash
-   ```
-
-   The `-v` flag mounts your current directory into the container, allowing you to:
-   - Edit files on your local machine
-   - See changes immediately in the container
-   - Persist changes even after the container stops
-
-5. Inside the container, you can:
-   - Run tests: `pytest`
-   - Run individual Python files: `python src/your_package/pipeline/transforms.py`
-   - Install additional packages: `pip install <package-name>`
-
-### Development Workflow
-
-1. Start the container (as shown in step 4 above)
-2. Make changes to the code using your preferred editor on your local machine
-3. Run tests in the container to verify changes
-4. When done, exit the container with `exit` command
-5. Container will automatically clean up, but your code changes are saved locally
-
-### Rebuilding the Docker Image
-
-You'll need to rebuild the Docker image if you:
-- Modify the Dockerfile
-- Update requirements.txt
-
-To rebuild:
-```bash
-# Force a clean build (recommended when troubleshooting):
-docker build --no-cache -t pyspark-pipeline .
-
-# Normal rebuild:
-docker build -t pyspark-pipeline .
-```
-
-### Common Docker Commands
+### Container Management Commands
 
 ```bash
 # List running containers
 docker ps
 
+# List all containers (including stopped)
+docker ps -a
+
 # Stop a running container
-docker stop <container-id>
+docker stop pyspark-dev
 
-# Remove all stopped containers
-docker container prune
+# Start a stopped container
+docker start pyspark-dev
 
-# View Docker logs
-docker logs <container-id>
+# Attach to a running container
+docker exec -it pyspark-dev /bin/bash
 
-# Remove an image (if you need to start fresh)
-docker rmi pyspark-pipeline
+# View container logs
+docker logs pyspark-dev
+
+# Remove a container
+docker rm pyspark-dev
 ```
 
-### Troubleshooting Docker
+### Development Workflow Example
 
-1. If you see "permission denied" errors:
-   - On Linux: prefix commands with `sudo`
-   - On Windows: ensure Docker Desktop is running
-   - Check file permissions in your project directory
+1. **Start Development Container**
+   ```bash
+   docker run -it --rm \
+     -v ${PWD}:/app \
+     --name pyspark-dev \
+     pyspark-pipeline /bin/bash
+   ```
 
-2. If container fails to start:
-   - Verify Docker Desktop is running
-   - Try stopping and removing existing containers
-   - Check available disk space
+2. **Inside Container**
+   - Run tests: `pytest`
+   - Execute scripts: `python src/your_package/pipeline/transforms.py`
+   - Install new packages: `pip install <package-name>`
 
-3. If volume mount isn't working:
-   - Verify the path syntax for your OS
+3. **Code Changes**
+   - Edit files on your local machine with your preferred editor
+   - Changes are immediately reflected in the container
+   - Run tests in container to verify changes
+
+4. **Exit Container**
+   - Type `exit` or press `Ctrl+D`
+   - Container will automatically be removed (due to `--rm` flag)
+
+### Platform-Specific Notes
+
+**Windows:**
+```bash
+# Use this syntax for volume mounting
+docker run -it --rm -v %cd%:/app pyspark-pipeline /bin/bash
+
+# Or with PowerShell
+docker run -it --rm -v ${PWD}:/app pyspark-pipeline /bin/bash
+```
+
+**Mac/Linux:**
+```bash
+docker run -it --rm -v $(pwd):/app pyspark-pipeline /bin/bash
+```
+
+### Common Issues and Solutions
+
+1. **Volume Mount Issues**
    - Ensure you're in the project root directory
-   - On Windows, ensure file sharing is enabled in Docker Desktop
+   - On Windows, check Docker Desktop file sharing settings
+   - Use absolute paths if relative paths fail
 
-### Building the Wheel Package
+2. **Permission Issues**
+   ```bash
+   # If you see permission errors, add your user to docker group (Linux)
+   sudo usermod -aG docker $USER
+   # Then log out and back in
+   ```
 
-To build the wheel package for Databricks deployment:
+3. **Container Won't Start**
+   - Check if port is already in use
+   - Ensure Docker Desktop is running
+   - Check available system resources
 
-```bash
-python -m build
-```
-
-The wheel file will be created in the `dist/` directory.
-
-### Deploying to Databricks
-
-1. Build your wheel package as described above
-2. Upload the wheel file to Databricks
-3. Install the package in your Databricks cluster using `%pip install /dbfs/path/to/your-package.whl`
-
-## Development Guidelines
-
-### Code Structure
-
-- Place your main pipeline code in `src/your_package/pipeline/`
-- Write tests in the `tests/` directory
-- Use `black` for code formatting and `isort` for import sorting
-
-### Testing
-
-Run tests locally using:
-
-```bash
-docker run pyspark-pipeline pytest
-```
-
-### Best Practices
-
-1. Always write tests for new functionality
-2. Keep transforms modular and composable
-3. Use type hints in Python code
-4. Document your functions and classes
-5. Update requirements.txt when adding new dependencies
-
-## Creating a New Pipeline
-
-1. Create a new module in `src/your_package/pipeline/`
-2. Write your transformation logic
-3. Add corresponding tests
-4. Build and test locally using Docker
-5. When ready, build the wheel package and deploy to Databricks
-
-## Contributing
-
-1. Create a new branch for your feature
-2. Make your changes
-3. Run tests and ensure they pass
-4. Submit a pull request
-
-## License
-
+[rest of README remains the same...]
